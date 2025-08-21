@@ -2,10 +2,13 @@ package kr.co.bnksys.sangsang.controller;
 
 import kr.co.bnksys.sangsang.mapper.QaMapper;
 import kr.co.bnksys.sangsang.model.QuestionAnswer;
+import kr.co.bnksys.sangsang.model.RecommendRequest;
+import kr.co.bnksys.sangsang.model.RecommendResponse;
 import kr.co.bnksys.sangsang.model.UserSession;
 import kr.co.bnksys.sangsang.repository.QARepository;
 import kr.co.bnksys.sangsang.repository.UserSessionRepository;
 import kr.co.bnksys.sangsang.service.LLMService;
+import kr.co.bnksys.sangsang.service.RecommendService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +35,11 @@ public class QAController {
     @Autowired
     QaMapper qaMapper;
 
+
+    @Autowired
+    private RecommendService recommendService;
+
+
     public QAController(QARepository qaRepository,
                         UserSessionRepository userSessionRepository,
                         LLMService llmService) {
@@ -47,7 +55,6 @@ public class QAController {
         return Map.of("sessionId", s.getSessionId());
     }
 
-
     // 완료데이터 처리
     private Map<String,Double> fn_getScoreData(String sessionId){
 
@@ -62,8 +69,6 @@ public class QAController {
     }
 
 
-
-
     @PostMapping("/answer")
     public Map<String, Object> submitAnswer(@RequestParam String sessionId,
                                             @RequestParam(required = false) String answer) {
@@ -76,7 +81,19 @@ public class QAController {
         // 기 완료여부 확인
         if ("Y".equals(qaMapper.selectDataDupYn(paramMap))){
             log.info(">> 해당건은 이미 완료되었음. ");
-            Map<String,Double> scores = fn_getScoreData(sessionId);
+            //Map<String,Double> scores = fn_getScoreData(sessionId);
+            HashMap scores = qaMapper.selectResultData(paramMap);
+
+            HashMap searchMap = new HashMap();
+
+            RecommendRequest recommendRequest = new RecommendRequest();
+            recommendRequest.setTop_k(5);
+            recommendRequest.setUser_scores(scores);
+
+            List<RecommendResponse> results = recommendService.getRecommendations(recommendRequest);
+
+
+
             return Map.of("done", true, "scores", scores, "index", TOTAL, "total", TOTAL);
         }
 
