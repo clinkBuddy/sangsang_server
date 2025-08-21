@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mabatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.bnksys.sangsang.mapper.JobPostingScoreMapper">
+
+    <!-- 결과 매핑 -->
+    <resultMap id="JobPostingScoreResultMap" type="kr.co.bnksys.sangsang.model.JobPostingScore">
+        <id property="id" column="id"/>
+        <result property="공감사회기술" column="공감사회기술"/>
+        <result property="성실성" column="성실성"/>
+        <result property="개방성" column="개방성"/>
+        <result property="외향성" column="외향성"/>
+        <result property="우호성" column="우호성"/>
+        <result property="정서안정성" column="정서안정성"/>
+        <result property="기술전문성" column="기술전문성"/>
+        <result property="인지문제해결" column="인지문제해결"/>
+        <result property="대인영향력" column="대인영향력"/>
+        <result property="자기관리" column="자기관리"/>
+        <result property="적응력" column="적응력"/>
+        <result property="학습속도" column="학습속도"/>
+        <result property="대인민첩성" column="대인민첩성"/>
+        <result property="성과민첩성" column="성과민첩성"/>
+        <result property="자기인식" column="자기인식"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <!-- 채용공고 평가 등록 -->
+    <insert id="insertJobPostingScore" parameterType="kr.co.bnksys.sangsang.model.JobPostingScore">
+        INSERT INTO TMP_채용공고평가 (
+            공감사회기술,
+            성실성,
+            개방성,
+            외향성,
+            우호성,
+            정서안정성,
+            기술전문성,
+            인지문제해결,
+            대인영향력,
+            자기관리,
+            적응력,
+            학습속도,
+            대인민첩성,
+            성과민첩성,
+            자기인식,
+            created_at
+        ) VALUES (
+            #{공감사회기술},
+            #{성실성},
+            #{개방성},
+            #{외향성},
+            #{우호성},
+            #{정서안정성},
+            #{기술전문성},
+            #{인지문제해결},
+            #{대인영향력},
+            #{자기관리},
+            #{적응력},
+            #{학습속도},
+            #{대인민첩성},
+            #{성과민첩성},
+            NOW()
+        )
+    </insert>
+
+    <!-- ID로 채용공고 평가 조회 -->
+    <select id="selectJobPostingScoreById" parameterType="Long" resultMap="JobPostingScoreResultMap">
+        SELECT 
+            id,
+            공감사회기술,
+            성실성,
+            개방성,
+            외향성,
+            우호성,
+            정서안정성,
+            기술전문성,
+            인지문제해결,
+            대인영향력,
+            자기관리,
+            적응력,
+            학습속도,
+            대인민첩성,
+            성과민첩성,
+            자기인식,
+            created_at
+        FROM TMP_채용공고평가점수
+        WHERE id = #{id}
+    </select>
+
+    <!-- 채용공고 평가 목록 조회 -->
+    <select id="selectJobPostingScoreList" parameterType="Map" resultMap="JobPostingScoreResultMap">
+        SELECT 
+            id,
+            공감사회기술,
+            성실성,
+            개방성,
+            외향성,
+            우호성,
+            정서안정성,
+            기술전문성,
+            인지문제해결,
+            대인영향력,
+            자기관리,
+            적응력,
+            학습속도,
+            대인민첩성,
+            성과민첩성,
+            자기인식,
+            created_at
+        FROM TMP_채용공고평가점수
+        <where>
+            <if test="id != null and id != ''">
+                AND id = #{id}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+        <if test="limit != null and offset != null">
+            LIMIT #{limit} OFFSET #{offset}
+        </if>
+    </select>
+
+    <!-- 특정 이메일과 채용공고ID로  조회 -->
+    <select id="selectJobPostingScoreByEmailAndJobId" parameterType="Map" resultMap="JobPostingScoreResultMap">
+        SELECT 
+            id,
+            공감사회기술,
+            성실성,
+            개방성,
+            외향성,
+            우호성,
+            정서안정성,
+            기술전문성,
+            인지문제해결,
+            대인영향력,
+            자기관리,
+            적응력,
+            학습속도,
+            대인민첩성,
+            성과민첩성,
+            자기인식,
+            created_at
+        FROM TMP_채용공고평가점수
+        WHERE id = #{id}
+    </select>
+
+    <!-- 채용공고 평가 수정 -->
+    <update id="updateJobPostingScore" parameterType="kr.co.bnksys.sangsang.model.JobPostingScore">
+        UPDATE TMP_채용공고평가점수
+        SET 
+            공감사회기술 = #{공감사회기술},
+            성실성 = #{성실성},
+            개방성 = #{개방성},
+            외향성 = #{외향성},
+            우호성 = #{우호성},
+            정서안정성 = #{정서안정성},
+            기술전문성 = #{기술전문성},
+            인지문제해결 = #{인지문제해결},
+            대인영향력 = #{대인영향력},
+            자기관리 = #{자기관리},
+            적응력 = #{적응력},
+            학습속도 = #{학습속도},
+            대인민첩성 = #{대인민첩성},
+            성과민첩성 = #{성과민첩성},
+            자기인식 = #{자기인식}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 채용공고 평가 삭제 -->
+    <delete id="deleteJobPostingScore" parameterType="Long">
+        DELETE FROM TMP_채용공고평가점수
+        WHERE id = #{id}
+    </delete>
+
+    <!-- 전체 개수 조회 (페이징용) -->
+    <select id="selectJobPostingScoreCount" parameterType="Map" resultType="int">
+        SELECT COUNT(*)
+        FROM TMP_채용공고평가점수
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+        </where>
+    </select>
+
+</mapper>

@@ -13,6 +13,30 @@
 
     </select>
 
+    <select id="selectResultData" parameterType="String" resultType="HashMap">
+
+        SELECT
+            email
+          , 공감사회기술
+          , 성실성
+          , 개방성
+          , 외향성
+          , 우호성
+          , 정서안정성
+          , 기술전문성
+          , 인지문제해결
+          , 대인영향력
+          , 자기관리
+          , 적응력
+          , 학습속도
+          , 대인민첩성
+          , 성과민첩성
+          , 자기인식
+          , 자기조절
+        FROM TB_스무고개결과
+        WHERE email=#{email}
+    </select>
+
     <delete id="deleteResultData" parameterType="HashMap">
         DELETE FROM TB_스무고개결과
         WHERE email=#{email}
@@ -39,6 +63,7 @@
                              ,대인민첩성
                              ,성과민첩성
                              ,자기인식
+                             ,자기조절
                              ,완료일시
         )
 
@@ -59,6 +84,7 @@
               ,#{대인민첩성}
               ,#{성과민첩성}
               ,#{자기인식}
+              ,#{자기조절}
               ,NOW()
 
               )

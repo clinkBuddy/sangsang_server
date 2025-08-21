@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +81,7 @@ public class QAController {
             Map<String,Double> scores = llmService.evaluate(answers);
 
             System.out.println("완료!!! : " + scores.toString());
-            HashMap paramMap = new HashMap();
+            HashMap<String, Object> paramMap = new HashMap<>();
             paramMap.putAll(scores);
             paramMap.put("email",sessionId);
 
@@ -102,6 +101,31 @@ public class QAController {
         saveQuestion(sessionId, q);
 
         return Map.of("done", false, "question", q, "index", nextIndex, "total", TOTAL);
+    }
+
+    /**
+     * 이메일로 결과 데이터 조회
+     */
+    @GetMapping("/result")
+    public Map<String, Object> getResultByEmail(@RequestParam String email) {
+        try {
+            log.info("결과 조회 요청 - email: {}", email);
+            
+            HashMap<String, Object> paramMap = new HashMap<>();
+            paramMap.put("email", email);
+            
+            Object resultData = qaMapper.selectResultData(paramMap);
+            
+            if (resultData != null) {
+                return Map.of("success", true, "data", resultData);
+            } else {
+                return Map.of("success", false, "message", "해당 이메일의 결과 데이터를 찾을 수 없습니다.");
+            }
+            
+        } catch (Exception e) {
+            log.error("결과 조회 중 오류 발생 - email: {}, error: {}", email, e.getMessage(), e);
+            return Map.of("success", false, "message", "결과 조회 중 오류가 발생했습니다: " + e.getMessage());
+        }
     }
 
     private String safeGenerate(int index, String lastAnswer) {

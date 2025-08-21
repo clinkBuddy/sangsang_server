@@ -13,7 +13,7 @@ public class WebConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:3001")  // ✅ 와일드카드 X, 정확히 지정
+                        .allowedOrigins("http://localhost:3000")  // ✅ 와일드카드 X, 정확히 지정
                         .allowedMethods("GET", "POST", "PUT", "DELETE")
                         .allowCredentials(true);
             }
