@@ -13,6 +13,7 @@ public interface QaMapper {
 
     void deleteResultData(HashMap paramMap);
 
+    HashMap selectResultData(HashMap paramMap);
 
 
 }

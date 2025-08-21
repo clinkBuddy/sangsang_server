@@ -19,6 +19,29 @@
 
     </delete>
 
+    <select id="selectResultData" parameterType="HashMap" resultType="HashMap">
+
+        SELECT CAST(공감사회기술 AS SIGNED)      AS 공감사회기술
+             ,CAST(성실성 AS SIGNED)            AS 성실성
+             ,CAST(개방성 AS SIGNED)            AS 개방성
+             ,CAST(외향성 AS SIGNED)            AS 외향성
+             ,CAST(우호성 AS SIGNED)            AS 우호성
+             ,CAST(정서안정성 AS SIGNED)        AS 정서안정성
+             ,CAST(기술전문성 AS SIGNED)        AS 기술전문성
+             ,CAST(인지문제해결 AS SIGNED)      AS 인지문제해결
+             ,CAST(대인영향력 AS SIGNED)        AS 대인영향력
+             ,CAST(자기관리 AS SIGNED)          AS 자기관리
+             ,CAST(적응력 AS SIGNED)            AS 적응력
+             ,CAST(학습속도 AS SIGNED)          AS 학습속도
+             ,CAST(대인민첩성 AS SIGNED)        AS 대인민첩성
+             ,CAST(성과민첩성 AS SIGNED)        AS 성과민첩성
+             ,CAST(자기인식 AS SIGNED)          AS 자기인식
+             ,CAST(자기조절 AS SIGNED)          AS 자기조절
+        FROM TB_스무고개결과
+        WHERE email=#{email}
+
+    </select>
+
 
     <insert id="insertResultData" parameterType="HashMap">
         INSERT INTO TB_스무고개결과(
