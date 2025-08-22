@@ -1,5 +1,6 @@
 package kr.co.bnksys.sangsang.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import kr.co.bnksys.sangsang.mapper.QaMapper;
 import kr.co.bnksys.sangsang.model.QuestionAnswer;
 import kr.co.bnksys.sangsang.model.RecommendRequest;
@@ -71,7 +72,7 @@ public class QAController {
 
     @PostMapping("/answer")
     public Map<String, Object> submitAnswer(@RequestParam String sessionId,
-                                            @RequestParam(required = false) String answer) {
+                                            @RequestParam(required = false) String answer) throws JsonProcessingException {
 
         log.info("==AI 매칭 스무고개 답변 수신{} : {}" ,sessionId,answer);
 
@@ -84,17 +85,14 @@ public class QAController {
             //Map<String,Double> scores = fn_getScoreData(sessionId);
             HashMap scores = qaMapper.selectResultData(paramMap);
 
-            HashMap searchMap = new HashMap();
-
             RecommendRequest recommendRequest = new RecommendRequest();
             recommendRequest.setTop_k(5);
             recommendRequest.setUser_scores(scores);
-
             List<RecommendResponse> results = recommendService.getRecommendations(recommendRequest);
 
+            log.info("추천 채용정보 : {}" ,results.toString());
 
-
-            return Map.of("done", true, "scores", scores, "index", TOTAL, "total", TOTAL);
+            return Map.of("done", true, "scores", scores, "index", TOTAL, "total", TOTAL,"recommendJobOpening",results);
         }
 
 

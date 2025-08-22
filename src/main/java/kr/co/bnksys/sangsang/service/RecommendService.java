@@ -29,6 +29,9 @@ public class RecommendService {
      * 추천 서비스 호출
      */
     public List<RecommendResponse> getRecommendations(RecommendRequest request) {
+
+
+        log.info("getRecommendations : {}" ,request.toString());
         try {
             ResponseEntity<String> response = restTemplate.postForEntity(
                     RECOMMEND_API_URL,

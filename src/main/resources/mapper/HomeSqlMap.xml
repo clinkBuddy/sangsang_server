@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mabatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.bnksys.sangsang.mapper.HomeMapper">
+    <!-- STR_TO_DATE('20250710', '%Y%m%d') -->
+    <select id="selectTotJobOpening" resultType="HashMap">
+        SELECT SUM(CASE
+	                    WHEN NOW() BETWEEN A.공고시작일 AND A.공고마감일 THEN 1
+                        ELSE 0
+                    END)                                        AS activeJobs
+             , SUM(CASE
+	                    WHEN DATEDIFF(A.공고마감일, NOW()) BETWEEN 0 AND 3 THEN 1
+					    ELSE 0
+                    END)                                        AS urgentJobs
+             , SUM(CASE
+	                    WHEN DATE_FORMAT(A.공고시작일, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m') THEN 1
+                        ELSE 0
+                    END)                                        AS thisMonthJobs
+             , (
+                 SELECT SUM(정규직_일반) AS 총채용인원
+                   FROM TMP_신입채용인원현황
+                  WHERE 연도 >= YEAR(CURDATE()) - 4  -- 최근 5년: 올해 포함
+               )                                                AS totalHired
+          FROM TMP_채용공고 A
+    </select>
+
+    <!-- 참여기관별 채용 -->
+    <select id="selectAgencyJobOpening" resultType="HashMap">
+        SELECT A.기관명                  AS name
+             , IFNULL(B.진행중채용, 0)    AS totalJobs
+             , A.평균경쟁률               as avgCompetition
+          FROM (
+                 SELECT A.기관명
+                      , CASE WHEN SUM(A.선발인원) = 0 THEN 0 ELSE ROUND(SUM(A.지원인원) / SUM(A.선발인원), 1) END   AS 평균경쟁률
+                   FROM TMP_채용경쟁률 A
+                  WHERE A.선발인원 > 0
+                  GROUP BY A.기관명
+               ) A
+          LEFT OUTER JOIN
+               (
+                 SELECT A.기관명
+                      , SUM(CASE WHEN NOW() BETWEEN A.공고시작일 AND A.공고마감일 THEN 1 ELSE 0 END) AS 진행중채용
+                   FROM TMP_채용공고 A
+                  GROUP BY A.기관명
+               ) B
+            ON A.기관명 = B.기관명
+    </select>
+
+
+    <!-- 참여기관별 채용 직렬 -->
+    <select id="selectAgencyJobOpeningJobseries" resultType="HashMap">
+        SELECT DISTINCT
+               A.기관명         AS name
+             , A.일반전형       AS jobSeries
+          FROM TMP_채용공고_분리 A
+    </select>
+
+
+    <!-- 마감채용 직렬 -->
+    <select id="selectUrgentJobOpening" resultType="HashMap">
+        SELECT A.공고명                  AS jobTitle
+             , A.기관명                AS agencyName
+             , A.채용인원              AS requiredCount
+             , A.공고마감일             AS endDate
+          FROM TMP_채용공고 A
+         <!-- WHERE DATEDIFF(A.공고마감일, STR_TO_DATE('20250710', '%Y%m%d')) BETWEEN 0 AND 3 -->
+         WHERE DATEDIFF(A.공고마감일, NOW()) BETWEEN 0 AND 3
+    </select>
+
+    <!-- 경쟁률 낮은 채용 -->
+    <select id="selectLowCompetitionRateJobOpening" resultType="HashMap">
+        SELECT A.구분                AS jobTitle
+             , A.기관명              AS agencyName
+             , A.선발인원             AS requiredCount
+             , A.지원인원             AS registCount
+             , A.지원인원 / A.선발인원 AS competitionRate
+        FROM TMP_채용경쟁률 A
+        WHERE A.지원인원 != 0
+        ORDER BY A.연도 DESC, 경쟁률
+        LIMIT 3
+    </select>
+
+
+
+
+    <!-- ID로 채용공고 조회 -->
+    <select id="selectOneJobPostingById" parameterType="HashMap" resultType="HashMap">
+        SELECT id
+             , 기관명                          AS agencyName
+             , 공고명                          AS jobTitle
+             , 공고시작일
+             , 공고마감일
+             , 접수시작일                       AS applicationStart
+             , 접수마감일                       AS applicationEnd
+             , 접수방법
+             , 접수대행
+             , 일반전형
+             , 채용인원                        AS requiredCount
+             , 채용방법
+             , 전형방법
+             , 임용시기
+             , 임용조건
+             , 담당부서
+             , 연락처
+          FROM TMP_채용공고
+         WHERE id = #{id}
+    </select>
+
+</mapper>
