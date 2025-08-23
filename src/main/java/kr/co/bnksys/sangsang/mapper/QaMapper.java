@@ -15,5 +15,9 @@ public interface QaMapper {
 
     HashMap selectResultData(HashMap paramMap);
 
+    HashMap selectRecommendDetail(String strId);
+
+    //AI 조언
+    String selectCommentResult(HashMap paramMap);
 
 }

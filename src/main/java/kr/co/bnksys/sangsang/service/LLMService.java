@@ -3,6 +3,9 @@ package kr.co.bnksys.sangsang.service;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import kr.co.bnksys.sangsang.config.LLMProperties;
+import kr.co.bnksys.sangsang.controller.RecommendController;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -12,6 +15,8 @@ import java.util.*;
 
 @Service
 public class LLMService {
+
+    private static final Logger log = LoggerFactory.getLogger(LLMService.class);
 
     //private static final String OLLAMA_URL  = "http://localhost:11434/api/chat";
     //private static final String MODEL_NAME  = "gemma3:27b";
@@ -47,21 +52,41 @@ public class LLMService {
     }
 
     // === 최종 평가(JSON만 강제) → Map<String, Double>로 반환 ===
-    public Map<String, Double> evaluate(List<String> answers) {
+    //public Map<String, Double> evaluate(List<String> answers) {
+    public HashMap evaluate(List<String> answers){
         String joined = String.join("\n", answers);
 
         String system = "당신은 심리/역량 평가 분석가입니다. 사용자의 답변을 평가하여 " +
                 "지정된 15개 항목을 1~5의 값으로 점수화합니다. 오직 JSON 객체만 출력합니다. " +
                 "코드펜스나 다른 텍스트를 포함하지 마세요.";
 
-        String user = "다음은 한 지원자의 스무고개 형식 Q/A 답변 모음입니다. 이를 바탕으로 15개 항목을 0~5점으로 평가해 JSON만 출력하세요.\n" +
+        String user = "다음은 한 지원자의 스무고개 형식 Q/A 답변 모음입니다. 이를 바탕으로 15개 항목을 1~5점으로 평가해 JSON만 출력하세요.\n" +
                 "항목: [공감사회기술, 성실성, 개방성, 외향성, 우호성, 정서안정성, 기술전문성, 인지문제해결, 대인영향력, 자기관리, 적응력, 학습속도, 대인민첩성, 성과민첩성, 자기인식, 자기조절]\n" +
                 "예시: {\"공감사회기술\":5, \"성실성\":3, ...}\n" +
                 "설명 없이 JSON만:\n\n=== 답변 시작 ===\n" + joined + "\n=== 답변 끝 ===";
 
         String content = callOllama(system, user, true); // format=json
 
-        return parseScores(content);
+
+        String commentQuery = "다음은 한 구직 희망자의 능력치를 JSON 형식으로 정리한 내용 입니다. 이를 바탕으로 이 사람의 장,단점과 구직활동시 어떤 부분을 노력해야 하는지 채용담당자 입장에서 2~3문장으로 조언 해주세요.\n"+
+                    "구직 희망자의 능력치 JSON 시작 : " + content;
+
+        String system2 = "당신은 회사의 인사채용담당자입니다. 제공되는 사용자(구직 희망자)의 능력치를 참고하여 " +
+                "이 구직희망자가 구직을 할수있도록 도움을 주는 역할을 합니다. 간단히 2~3문장정도로 도움일 될만한 조언을 합니다.\n"+
+                "JSON 데이터를 분석한 결과라는 말은하지 마세요. \n"+
+                "답변은 구직희망자라고 하지말고 '당신은' 으로 시작하세요.";
+
+
+        log.info("commentQuery: {}", commentQuery);
+        String commentResult = callOllama(system2, commentQuery, false);
+
+        log.info(" 채용담당자 코멘트 : {}" , commentResult);
+
+        HashMap resultMap = new HashMap();
+        resultMap.put("scoreData",parseScores(content));
+        resultMap.put("commentResult",commentResult);
+
+        return resultMap;
     }
 
     // === Ollama Chat API 호출 ===

@@ -37,8 +37,17 @@
              ,CAST(성과민첩성 AS SIGNED)        AS 성과민첩성
              ,CAST(자기인식 AS SIGNED)          AS 자기인식
              ,CAST(자기조절 AS SIGNED)          AS 자기조절
+
         FROM TB_스무고개결과
         WHERE email=#{email}
+
+    </select>
+
+    <select id="selectCommentResult" parameterType="HashMap" resultType="String">
+            SELECT AI조언
+            FROM TB_스무고개결과
+            WHERE email=#{email}
+
 
     </select>
 
@@ -63,33 +72,49 @@
                              ,성과민첩성
                              ,자기인식
                              ,자기조절
+                             ,AI조언
                              ,완료일시
         )
 
         VALUES(
                 #{email}
-              ,#{공감사회기술}
-              ,#{성실성}
-              ,#{개방성}
-              ,#{외향성}
-              ,#{우호성}
-              ,#{정서안정성}
-              ,#{기술전문성}
-              ,#{인지문제해결}
-              ,#{대인영향력}
-              ,#{자기관리}
-              ,#{적응력}
-              ,#{학습속도}
-              ,#{대인민첩성}
-              ,#{성과민첩성}
-              ,#{자기인식}
-              ,#{자기조절}
+              ,IFNULL(#{공감사회기술},1)
+              ,IFNULL(#{성실성},1)
+              ,IFNULL(#{개방성},1)
+              ,IFNULL(#{외향성},1)
+              ,IFNULL(#{우호성},1)
+              ,IFNULL(#{정서안정성},1)
+              ,IFNULL(#{기술전문성},1)
+              ,IFNULL(#{인지문제해결},1)
+              ,IFNULL(#{대인영향력},1)
+              ,IFNULL(#{자기관리},1)
+              ,IFNULL(#{적응력},1)
+              ,IFNULL(#{학습속도},1)
+              ,IFNULL(#{대인민첩성},1)
+              ,IFNULL(#{성과민첩성},1)
+              ,IFNULL(#{자기인식},1)
+              ,IFNULL(#{자기조절},1)
+              ,#{AI조언}
               ,NOW()
 
               )
 
     </insert>
 
+
+
+    <select id="selectRecommendDetail" parameterType="String" resultType="Hashmap">
+        SELECT 기관명
+             ,  공고명
+             ,  CONCAT(공고시작일,' ~ ',공고마감일) AS 접수기간
+             ,  공고시작일
+             , 공고마감일
+
+
+        FROM TMP_채용공고_분리 a
+        WHERE id=#{value}
+
+    </select>
 
 
 
