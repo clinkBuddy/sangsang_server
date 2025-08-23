@@ -16,13 +16,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin("/*")
 public class QAController {
 
     private static final Logger log = LoggerFactory.getLogger(QAController.class);
@@ -57,16 +57,46 @@ public class QAController {
     }
 
     // 완료데이터 처리
-    private Map<String,Double> fn_getScoreData(String sessionId){
-
+    //private Map<String,Double> fn_getScoreData(String sessionId){
+    private HashMap fn_getScoreData(String sessionId){
         List<String> answers = qaRepository.findBySessionIdOrderByIdAsc(sessionId).stream()
                 .map(QuestionAnswer::getAnswerText)
                 .filter(v -> v != null && !v.isBlank())
                 .toList();
 
-        Map<String,Double> scores = llmService.evaluate(answers);
+        //Map<String,Double> scores = (Map<String,Double>)llmService.evaluate(answers).get("scoreData");
+        //return scores;
+        return llmService.evaluate(answers);
+    }
 
-        return scores;
+
+    public Map<String,Object> fn_getRecommendData(HashMap paramMap){
+        HashMap scores = qaMapper.selectResultData(paramMap);
+
+        RecommendRequest recommendRequest = new RecommendRequest();
+        recommendRequest.setTop_k(5);
+        recommendRequest.setUser_scores(scores);
+        List<RecommendResponse> results = recommendService.getRecommendations(recommendRequest);
+
+        log.info("추천 채용정보 개수 : {}",results.size());
+        log.info("추천 채용정보 : {}" ,results.toString());
+
+        List<HashMap> listRecommends = new ArrayList<>();
+
+        for ( RecommendResponse m : results ) {
+            log.info("파라미터 ID : {} ",m.getId());
+            HashMap resultMap = qaMapper.selectRecommendDetail(m.getId());
+
+            if ( resultMap != null) {
+                resultMap.put("모집직렬", m.get일반전형());
+                resultMap.put("유사도", m.get유사도());
+                listRecommends.add(resultMap);
+            }
+        }
+        log.info("추천 채용정보 리턴 , {} ",listRecommends);
+
+       String strAIComment = qaMapper.selectCommentResult(paramMap);
+        return Map.of("done", true, "scores", scores, "index", TOTAL, "total", TOTAL,"recommendJobOpening",listRecommends,"ai_comment",strAIComment);
     }
 
 
@@ -82,17 +112,7 @@ public class QAController {
         // 기 완료여부 확인
         if ("Y".equals(qaMapper.selectDataDupYn(paramMap))){
             log.info(">> 해당건은 이미 완료되었음. ");
-            //Map<String,Double> scores = fn_getScoreData(sessionId);
-            HashMap scores = qaMapper.selectResultData(paramMap);
-
-            RecommendRequest recommendRequest = new RecommendRequest();
-            recommendRequest.setTop_k(5);
-            recommendRequest.setUser_scores(scores);
-            List<RecommendResponse> results = recommendService.getRecommendations(recommendRequest);
-
-            log.info("추천 채용정보 : {}" ,results.toString());
-
-            return Map.of("done", true, "scores", scores, "index", TOTAL, "total", TOTAL,"recommendJobOpening",results);
+            return fn_getRecommendData(paramMap);
         }
 
 
@@ -118,15 +138,19 @@ public class QAController {
         long answeredCount = qaRepository.countBySessionIdAndAnswerTextIsNotNull(sessionId);
         if (answeredCount >= TOTAL) {
 
-            Map<String,Double> scores = fn_getScoreData(sessionId);
+            HashMap llmMap = fn_getScoreData(sessionId);
+            Map<String,Double> scores = (Map<String,Double>)llmMap.get("scoreData");
             paramMap.putAll(scores);
+            paramMap.put("AI조언",llmMap.get("commentResult"));
             if ("Y".equals(qaMapper.selectDataDupYn(paramMap))){
                 qaMapper.deleteResultData(paramMap);
             }
 
             qaMapper.insertResultData(paramMap);
 
-            return Map.of("done", true, "scores", scores, "index", TOTAL, "total", TOTAL);
+            //return Map.of("done", true, "scores", scores, "index", TOTAL, "total", TOTAL);
+
+            return fn_getRecommendData(paramMap);
         }
 
         // 5) 다음 질문 생성
@@ -161,4 +185,31 @@ public class QAController {
         qa.setQuestionText(q);
         qaRepository.save(qa);
     }
+
+
+    /**
+     * 이메일로 결과 데이터 조회
+     */
+    @GetMapping("/result")
+    public Map<String, Object> getResultByEmail(@RequestParam String email) {
+        try {
+            log.info("결과 조회 요청 - email: {}", email);
+
+            HashMap<String, Object> paramMap = new HashMap<>();
+            paramMap.put("email", email);
+
+            Object resultData = qaMapper.selectResultData(paramMap);
+
+            if (resultData != null) {
+                return Map.of("success", true, "data", resultData);
+            } else {
+                return Map.of("success", false, "message", "해당 이메일의 결과 데이터를 찾을 수 없습니다.");
+            }
+
+        } catch (Exception e) {
+            log.error("결과 조회 중 오류 발생 - email: {}, error: {}", email, e.getMessage(), e);
+            return Map.of("success", false, "message", "결과 조회 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
 }
